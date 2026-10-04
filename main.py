@@ -22,7 +22,6 @@ from docx.enum.table import WD_TABLE_ALIGNMENT
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 
-# Define paths
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 FIGURES_DIR = os.path.join(OUTPUT_DIR, "figures")
@@ -34,7 +33,6 @@ NOTEBOOK_PATH = os.path.join(BASE_DIR, "ml_model_notebook.ipynb")
 
 os.makedirs(FIGURES_DIR, exist_ok=True)
 
-# Set plotting style
 plt.style.use('seaborn-v0_8-whitegrid' if 'seaborn-v0_8-whitegrid' in plt.style.available else 'default')
 plt.rcParams['font.family'] = 'sans-serif'
 plt.rcParams['font.size'] = 10
@@ -56,7 +54,6 @@ def generate_dataset(n_samples=1200, random_state=42):
     device_options = ['Desktop', 'Mobile', 'Tablet']
     device_type = np.random.choice(device_options, n_samples, p=[0.45, 0.40, 0.15])
     
-    # Calculate churn probability based on features (ground truth mechanism with noise)
     logit = (
         -0.02 * tenure_months
         + 0.015 * monthly_spend
@@ -100,7 +97,6 @@ def train_and_evaluate(df):
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
     
-    # Preprocessor
     preprocessor = ColumnTransformer(
         transformers=[
             ('num', StandardScaler(), numeric_features),
@@ -108,7 +104,6 @@ def train_and_evaluate(df):
         ]
     )
     
-    # Models to evaluate
     models = {
         'Logistic Regression': LogisticRegression(random_state=42, max_iter=1000),
         'Decision Tree': DecisionTreeClassifier(max_depth=5, random_state=42),
@@ -145,7 +140,6 @@ def train_and_evaluate(df):
         }
         fitted_pipelines[name] = pipeline
 
-    # Save summary JSON
     json_summary = {
         name: {k: v for k, v in metrics.items() if k not in ['y_test', 'y_pred', 'y_proba']}
         for name, metrics in results.items()
@@ -160,7 +154,6 @@ def generate_visualizations(results, fitted_pipelines, preprocessor, numeric_fea
     """Generates and saves model evaluation plots."""
     figures = {}
     
-    # 1. Confusion Matrices Comparison
     fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
     for i, (name, metrics) in enumerate(results.items()):
         cm = np.array(metrics['confusion_matrix'])
@@ -177,7 +170,6 @@ def generate_visualizations(results, fitted_pipelines, preprocessor, numeric_fea
     plt.close()
     figures['confusion_matrices'] = cm_path
     
-    # 2. ROC Curves Comparison
     plt.figure(figsize=(8, 6))
     colors = {'Logistic Regression': '#1f77b4', 'Decision Tree': '#ff7f0e', 'Random Forest': '#2ca02c'}
     for name, metrics in results.items():
@@ -198,7 +190,6 @@ def generate_visualizations(results, fitted_pipelines, preprocessor, numeric_fea
     plt.close()
     figures['roc_curves'] = roc_path
 
-    # 3. Model Performance Comparison Bar Chart
     plt.figure(figsize=(9, 5.5))
     metrics_names = ['accuracy', 'precision', 'recall', 'f1_score', 'roc_auc']
     display_names = ['Accuracy', 'Precision', 'Recall', 'F1-Score', 'ROC-AUC']
@@ -214,7 +205,7 @@ def generate_visualizations(results, fitted_pipelines, preprocessor, numeric_fea
             height = bar.get_height()
             plt.annotate(f'{height:.2f}',
                          xy=(bar.get_x() + bar.get_width() / 2, height),
-                         xytext=(0, 3),  # 3 points vertical offset
+                         xytext=(0, 3),
                          textcoords="offset points",
                          ha='center', va='bottom', fontsize=8, fontweight='bold')
             
@@ -230,7 +221,6 @@ def generate_visualizations(results, fitted_pipelines, preprocessor, numeric_fea
     plt.close()
     figures['model_comparison'] = comp_path
 
-    # 4. Feature Importance (Random Forest)
     rf_pipeline = fitted_pipelines['Random Forest']
     rf_model = rf_pipeline.named_steps['classifier']
     cat_encoder = rf_pipeline.named_steps['preprocessor'].named_transformers_['cat']
@@ -265,7 +255,6 @@ def create_docx_report(results, feat_imp_df, figures):
     """Generates the professional Word document report matching internship submission standards."""
     doc = docx.Document()
     
-    # Set standard margins (1 inch)
     sections = doc.sections
     for section in sections:
         section.top_margin = Inches(1.0)
@@ -273,7 +262,6 @@ def create_docx_report(results, feat_imp_df, figures):
         section.left_margin = Inches(1.0)
         section.right_margin = Inches(1.0)
         
-    # Helper styling function
     def add_custom_heading(text, level, space_before=12, space_after=6):
         p = doc.add_paragraph()
         p.paragraph_format.space_before = Pt(space_before)
@@ -282,10 +270,10 @@ def create_docx_report(results, feat_imp_df, figures):
         run.bold = True
         if level == 1:
             run.font.size = Pt(18)
-            run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D) # Deep Navy
+            run.font.color.rgb = RGBColor(0x1B, 0x36, 0x5D)
         elif level == 2:
             run.font.size = Pt(14)
-            run.font.color.rgb = RGBColor(0x00, 0x56, 0xB3) # Royal Blue
+            run.font.color.rgb = RGBColor(0x00, 0x56, 0xB3)
         elif level == 3:
             run.font.size = Pt(12)
             run.font.color.rgb = RGBColor(0x33, 0x33, 0x33)
@@ -299,7 +287,6 @@ def create_docx_report(results, feat_imp_df, figures):
         shd.set(qn('w:fill'), hex_color)
         tcPr.append(shd)
 
-    # Title Page / Document Header
     p_title = doc.add_paragraph()
     p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
     p_title.paragraph_format.space_after = Pt(4)
@@ -318,7 +305,6 @@ def create_docx_report(results, feat_imp_df, figures):
 
     doc.add_paragraph("─" * 55).alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    # 1. Executive Summary & Objective
     add_custom_heading("1. Executive Summary & Task Objective", level=1)
     p = doc.add_paragraph()
     p.paragraph_format.line_spacing = 1.15
@@ -330,7 +316,6 @@ def create_docx_report(results, feat_imp_df, figures):
         "and extensive metric evaluation, this report presents an end-to-end machine learning solution ready for deployment."
     )
 
-    # 2. Dataset Overview & Data Preparation
     add_custom_heading("2. Data Preparation & Preprocessing Pipeline", level=1)
     doc.add_paragraph(
         "The dataset contains 1,200 customer profiles capturing tenure, monthly spending, interaction frequencies, "
@@ -338,7 +323,6 @@ def create_docx_report(results, feat_imp_df, figures):
         "Pipeline to guarantee zero data leakage between training and evaluation splits."
     )
     
-    # Feature Table
     table = doc.add_table(rows=1, cols=4)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
     hdr_cells = table.rows[0].cells
@@ -366,9 +350,8 @@ def create_docx_report(results, feat_imp_df, figures):
             if row_idx % 2 == 1:
                 set_cell_background(row_cells[col_idx], "F2F4F7")
 
-    doc.add_paragraph() # Spacing
+    doc.add_paragraph()
 
-    # 3. Model Selection & Justification
     add_custom_heading("3. Algorithm Selection & Model Training", level=1)
     doc.add_paragraph(
         "Three distinct machine learning algorithms were selected to explore linear, tree-based, and ensemble learning dynamics:"
@@ -379,14 +362,12 @@ def create_docx_report(results, feat_imp_df, figures):
         "• Random Forest Classifier (Ensemble Model): Combines 100 decision trees via bagging to reduce variance, prevent overfitting, and deliver high predictive power."
     )
 
-    # 4. Model Evaluation & Performance Metrics
     add_custom_heading("4. Empirical Model Evaluation & Comparative Analysis", level=1)
     doc.add_paragraph(
         "Models were evaluated on a held-out test split (25% of total dataset, stratifying target distribution). "
         "The quantitative findings are summarized in the table below:"
     )
 
-    # Results Table
     res_table = doc.add_table(rows=1, cols=6)
     res_table.alignment = WD_TABLE_ALIGNMENT.CENTER
     r_hdr_cells = res_table.rows[0].cells
@@ -406,12 +387,10 @@ def create_docx_report(results, feat_imp_df, figures):
         r_cells[4].text = f"{m_metrics['f1_score']:.4f}"
         r_cells[5].text = f"{m_metrics['roc_auc']:.4f}"
 
-    doc.add_paragraph() # Spacing
+    doc.add_paragraph()
 
-    # Figures Embedding
     add_custom_heading("4.1 Visualizations & Performance Analysis", level=2)
     
-    # Figure 1: Model Comparison Bar Chart
     doc.add_paragraph().add_run("Figure 1: Comprehensive Model Evaluation Metrics Comparison").bold = True
     doc.add_picture(figures['model_comparison'], width=Inches(6.0))
     doc.add_paragraph(
@@ -419,7 +398,6 @@ def create_docx_report(results, feat_imp_df, figures):
         "achieving the highest overall F1-score and ROC-AUC score."
     )
 
-    # Figure 2: Confusion Matrices
     doc.add_paragraph().add_run("Figure 2: Confusion Matrices across Evaluated Models").bold = True
     doc.add_picture(figures['confusion_matrices'], width=Inches(6.0))
     doc.add_paragraph(
@@ -427,7 +405,6 @@ def create_docx_report(results, feat_imp_df, figures):
         "(failing to flag churned customers) while maintaining high precision."
     )
 
-    # Figure 3: ROC Curves
     doc.add_paragraph().add_run("Figure 3: Receiver Operating Characteristic (ROC) Curves").bold = True
     doc.add_picture(figures['roc_curves'], width=Inches(5.5))
     doc.add_paragraph(
@@ -435,7 +412,6 @@ def create_docx_report(results, feat_imp_df, figures):
         "retained and churned customer classes across varying discrimination thresholds."
     )
 
-    # Figure 4: Feature Importance
     doc.add_paragraph().add_run("Figure 4: Random Forest Feature Importance Analysis").bold = True
     doc.add_picture(figures['feature_importance'], width=Inches(5.5))
     doc.add_paragraph(
@@ -443,7 +419,6 @@ def create_docx_report(results, feat_imp_df, figures):
         "predictors of customer churn behavior."
     )
 
-    # 5. Critical Discussion
     add_custom_heading("5. Critical Discussion: Sources of Error & Improvement Strategies", level=1)
     
     add_custom_heading("5.1 Potential Sources of Error", level=2)
@@ -649,7 +624,6 @@ def create_jupyter_notebook():
                 "metadata": {},
                 "outputs": [],
                 "source": [
-                    "# Display model performance metrics bar chart\n",
                     "results_df.plot(kind='bar', figsize=(10, 6))\n",
                     "plt.title('Model Performance Comparison')\n",
                     "plt.ylabel('Score')\n",
