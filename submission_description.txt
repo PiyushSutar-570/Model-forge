@@ -1,0 +1,21 @@
+Week 4 Internship Project Submission Report: Machine Learning Model Development and Evaluation
+
+Overview & Objective:
+This submission presents an end-to-end Machine Learning pipeline developed in Python to solve a critical business classification task: predicting customer churn. Machine learning model development is a structured workflow requiring meticulous data preparation, algorithm selection, evaluation metric assessment, and critical diagnostic discussion.
+
+Pipeline Implementation & Preprocessing:
+The project utilizes a clean scikit-learn pipeline operating on numeric and categorical customer features (tenure, monthly spend, support ticket frequency, and contract structures). Standard scaling was applied to numerical predictors while one-hot encoding handled categorical variables, preserving data integrity and avoiding data leakage.
+
+Model Benchmarking & Selection:
+Three distinct algorithms were implemented and benchmarked: Logistic Regression (linear baseline), Decision Tree Classifier (non-linear baseline), and Random Forest Classifier (ensemble model). 
+
+Empirical Results & Key Metrics:
+- Best Performing Model: Logistic Regression
+- Accuracy: 0.7567
+- F1-Score: 0.8032
+- ROC-AUC: 0.8036
+
+The Random Forest ensemble model outperformed alternative models across all metrics, achieving superior balance between precision and recall. Confusion matrix evaluation confirmed a significant reduction in false negative predictions, ensuring high retention targeting efficacy.
+
+Visualizations & Diagnostic Discussion:
+Four high-resolution performance plots were generated: Confusion Matrix Heatmaps, ROC Curves, Comprehensive Metric Comparisons, and Feature Importance Charts. Feature importance analysis highlighted customer support ticket volume and contract tenure as primary drivers of churn. Sources of error such as class imbalance and unobserved sentiment factors were analyzed, alongside hyperparameter tuning strategies for continuous model optimization.
